@@ -1,5 +1,5 @@
 {
-  "name": "calendar_event",
+  "name": "CalendarEvent",
   "version": "0.1.0",
   "private": true,
   "description": "## Project setup ``` yarn install ```",

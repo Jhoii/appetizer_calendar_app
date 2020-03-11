@@ -8,13 +8,16 @@
             <div class="b-calendar__information">
               <div class="today">
                 <div class="weekDay">
-                  {{ selectedWeekDay | capitalize }}
+                  Today is
                 </div>
                 <div class="day">
                   {{ selectedDayAndMonth.day }}
                 </div>
                 <div class="month mb-2">
                   {{ selectedDayAndMonth.month | capitalize }}
+                </div>
+                 <div class="weekDay">
+                  {{ selectedWeekDay | capitalize }}
                 </div>
               </div>
               <hr class="mt-0 mb-0" />
@@ -71,13 +74,24 @@
                   </div>
 
                   <div class="mb-3 text-center">
-                    <b-button v-show="!saving" variant="primary" size="lg" type="submit"
+                    <b-button
+                      v-show="!saving"
+                      variant="primary"
+                      size="lg"
+                      type="submit"
                       >Save</b-button
                     >
-                    <b-button v-show="saving" variant="light" size="lg" type="submit"
-                      ><b-spinner v-show="saving" variant="primary" label="Spinning"></b-spinner>
-                      </b-button
-                    >
+                    <b-button
+                      v-show="saving"
+                      variant="light"
+                      size="lg"
+                      type="submit"
+                      ><b-spinner
+                        v-show="saving"
+                        variant="primary"
+                        label="Spinning"
+                      ></b-spinner>
+                    </b-button>
                   </div>
                 </b-form>
               </div>
@@ -162,7 +176,6 @@
                   v-for="date in dateList"
                   :key="date.key"
                   :data-date="date.date"
-                  @click="setSelectedDate(date.moment)"
                 >
                   <span class="day">{{ date.dayNumber }}</span>
                   <div class="additional" v-show="date.eventName">
@@ -206,7 +219,8 @@
         eventname: '',
         todate: '',
         fromdate: '',
-        saving: false
+        saving: false,
+        calendarList: []
       }
     },
 
@@ -274,8 +288,85 @@
         },
 
         dateList: function() {
-            let $this = this;
+          if(this.calendarList.length <= 0){
+            return this.setCalendarList();
+          }else{
+            return this.setCalendarEvent();
+          }
 
+        },
+
+        initialDate: function() {
+            return this.formattingDay(this.today.get("date"));
+        },
+        initialMonth: function() {
+            return this.today.format("MMMM");
+        },
+        initialYear: function() {
+            return this.today.format("Y");
+        },
+        todayInCurrentMonthAndYear: function() {
+            return (
+                this.month === this.initialMonth &&
+                this.year === this.initialYear
+            );
+        },
+        selectedDayAndMonth: function() {
+            let dayAndMonth = this.selectedDate.format("D MMMM");
+            dayAndMonth = dayAndMonth.split(" ");
+            dayAndMonth = {
+                day: dayAndMonth[0],
+                month: dayAndMonth[1]
+            };
+
+            return dayAndMonth;
+        },
+        selectedWeekDay: function() {
+            return this.selectedDate.format("dddd");
+        },
+        todayIsEqualSelectDate: function() {
+            return (
+                this.selectedDate.format("YYYYMMDD") ===
+                this.today.format("YYYYMMDD")
+            );
+        }
+    },
+    methods: {
+        goToDate: function(moment){
+           this.calendarList = [];
+           this.dateContext = moment;
+        },
+
+        addMonth: function() {
+            this.clearForm();
+            this.dateContext = this.nextMonth;
+        },
+        subtractMonth: function() {
+            this.clearForm();
+            this.dateContext = this.previousMonth;
+        },
+        setSelectedDate: function(moment) {
+            this.selectedDate = moment;
+        },
+        goToday: function() {
+            this.clearForm();
+            this.selectedDate = this.today;
+            this.dateContext = this.today;
+        },
+        formattingDay(day) {
+            return ("0" + day).slice(-2);
+        },
+        getWeekDay(day) {
+            let index = day;
+            if (index > 7) {
+                index %= 7;
+            }
+            index = index === 0 ? 6 : index - 1;
+            return this.days[index];
+        },
+
+        setCalendarList: function(){
+            let $this = this;
             let dateList = [];
 
             let previousMonth = this.previousMonth;
@@ -437,72 +528,12 @@
                     };
                 }
             }
-
+            this.calendarList = dateList;
             return dateList.filter(function() {
                 return true;
             });
         },
 
-        initialDate: function() {
-            return this.formattingDay(this.today.get("date"));
-        },
-        initialMonth: function() {
-            return this.today.format("MMMM");
-        },
-        initialYear: function() {
-            return this.today.format("Y");
-        },
-        todayInCurrentMonthAndYear: function() {
-            return (
-                this.month === this.initialMonth &&
-                this.year === this.initialYear
-            );
-        },
-        selectedDayAndMonth: function() {
-            let dayAndMonth = this.selectedDate.format("D MMMM");
-            dayAndMonth = dayAndMonth.split(" ");
-            dayAndMonth = {
-                day: dayAndMonth[0],
-                month: dayAndMonth[1]
-            };
-
-            return dayAndMonth;
-        },
-        selectedWeekDay: function() {
-            return this.selectedDate.format("dddd");
-        },
-        todayIsEqualSelectDate: function() {
-            return (
-                this.selectedDate.format("YYYYMMDD") ===
-                this.today.format("YYYYMMDD")
-            );
-        }
-    },
-    methods: {
-        addMonth: function() {
-            this.dateContext = this.nextMonth;
-        },
-        subtractMonth: function() {
-            this.dateContext = this.previousMonth;
-        },
-        setSelectedDate: function(moment) {
-            this.selectedDate = moment;
-        },
-        goToday: function() {
-            this.selectedDate = this.today;
-            this.dateContext = this.today;
-        },
-        formattingDay(day) {
-            return ("0" + day).slice(-2);
-        },
-        getWeekDay(day) {
-            let index = day;
-            if (index > 7) {
-                index %= 7;
-            }
-            index = index === 0 ? 6 : index - 1;
-            return this.days[index];
-        },
         saveEvent:function(evt) {
           evt.preventDefault()
 
@@ -540,52 +571,65 @@
         },
 
         setCalendarEvent: function() {
-          let eventname = this.eventname;
-          let fromdate = moment(this.fromdate).format('YYYYMMDD');
-          let todate = moment(this.todate).format('YYYYMMDD');
-          let selected_days = this.selectedDays;
-          let dateA = moment(this.fromdate, "YYYYMMDD");
-          let dateB = moment(this.todate, "YYYYMMDD");
+            let eventname = this.eventname;
+            let fromdate = moment(this.fromdate).format('YYYYMMDD');
+            let todate = moment(this.todate).format('YYYYMMDD');
+            let selected_days = this.selectedDays;
+            let dateA = moment(this.fromdate, "YYYYMMDD");
+            let dateB = moment(this.todate, "YYYYMMDD");
 
-           if(dateA.diff(dateB) > 0){
-             this.toastFire('From date must not be later than to date','error');
-           }else{
-            let final_selection = [];
-             let range = moment.range(fromdate, todate);
-             for (let dts of range.by('days')) {
-                 let comparedt = dts.format('YYYYMMDD');
+            if(dateA.diff(dateB) > 0){
+              this.toastFire('From date must not be later than to date','error');
+            }else{
+              let final_selection = [];
+              let range = moment.range(fromdate, todate);
+              for (let dts of range.by('days')) {
+                  let comparedt = dts.format('YYYYMMDD');
+                  this.dateList.forEach((date,i) => {
+                    this.dateList[i].eventDay = false;
+                    this.dateList[i].eventName = null;
+                    let momentdate = moment(date.moment).format('YYYYMMDD');
+                    if(comparedt === momentdate){
+                        selected_days.forEach(day => {
+                          if(day == date.dayOfWeek){
+                              final_selection.push(date);
+                          }
+                      });
+                      }
+                  });
+                }
+
                 this.dateList.forEach((date,i) => {
-                  this.dateList[i].eventDay = false;
-                  this.dateList[i].eventName = null;
-                  let momentdate = moment(date.moment).format('YYYYMMDD');
-                  if(comparedt === momentdate){
-                      selected_days.forEach(day => {
-                        if(day == date.dayOfWeek){
-                            final_selection.push(date);
-                        }
-                    });
+                  final_selection.forEach(fs => {
+                    if(date.key == fs.key){
+                      this.dateList[i].eventDay = true;
+                      this.dateList[i].eventName = eventname;
                     }
+                  });
                 });
               }
 
-              this.dateList.forEach((date,i) => {
-                final_selection.forEach(fs => {
-                  if(date.key == fs.key){
-                    this.dateList[i].eventDay = true;
-                    this.dateList[i].eventName = eventname;
-                  }
-                });
-              });
-           }
+              return this.dateList;
+        },
+
+        clearForm: function() {
+          this.eventname = '';
+          this.todate = null;
+          this.fromdate = null;
+          this.selectedDays = [];
+          this.calendarList = [];
         },
 
         checkDateRange: function(){
           let dateA = moment(this.fromdate, "YYYYMMDD");
           let dateB = moment(this.todate, "YYYYMMDD");
+
           if(dateA.diff(dateB) > 0){
             this.todate = null;
             this.fromdate = null;
             this.toastFire('From date must not be later than to date','error');
+          }else{
+             this.goToDate(moment(this.fromdate));
           }
         },
 
